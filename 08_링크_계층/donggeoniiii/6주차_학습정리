@@ -1,0 +1,120 @@
+# 6주차 학습 정리
+
+---
+
+### 용어 정리
+
+- 호스트와 라우터 → `노드`
+- communication path 위에 있는 인접 노드들을 연결하는 채널을 `링크`라고 한다.
+- 링크 계층의 전송단위는 `frame`
+
+<br>
+
+## data-link layer
+
+<aside>
+💡 `datagram`을 한 노드에서 `physical하게 인접한` 다른 노드로 링크를 통해 연결하는 역할.
+
+</aside>
+
+- 어디에 있냐? NIC(Network Interface Card) 안에 구워져있다.
+- cf) 네트워크 계층과 전송 계층은 OS에 존재.
+- 네트워크에서 내려온 ip 패킷이 NIC에 전송, 거기서 header 부분에 MAC 주소, data 부분에 IP 패킷이 들어간 상태로 frame 단위로 전송
+- MAC 주소(medium access control): 충돌 방지를 위한 식별자.
+
+<br>
+
+
+### 링크의 종류
+
+1. 전용선일 때(point-to-point)
+- 충돌에 대한 영향 없음
+2. 한 라우터에 여러 노드가 존재할 때(broadcast medium)
+- physical 하게 인접해 있지만 통신 중이지 않은 다른 매체에도 frame이 전달 될 수 있다.
+- 내가 한 사람과 대화하고 있어도 같은 공간에 있는 다른사람도 들을 수 있는 것처럼.
+- 한 노드가 여러 링크로 한번에 프레임 전송을 받게 되면 충돌(collision)이 일어난다
+- 한 공간에서 여러 사람의 말을 동시에 들으면 들리지 않는 것처럼.
+- MAC(medium access control) protocol: 충돌 방지를 위한 식별자.
+
+<br>
+
+
+
+### MAC protocols
+
+- channel partitioning(TDMA & FDMA), Random Access, “turned” protocol
+- TDMA(time division multiple access): time slot을 정해놓고 전송 가능
+- 자원이 낭비된다는 단점(아 무도 안 사용하는 시간)
+- FDMA(frequency - - -): 주파수를 배정해놓고 전송가능
+- TDMA와 마찬가지로 자원이 낭비되는 단점(아무도 안 사용하는 주파수)
+- Random Access Protocol : 보내고싶을 때 보냄
+- 그럼 충돌은 어떻게 탐지하지?
+- CSMA(carrier sense multiple access): listen before transmit. 누가 말하고 있는지 먼저 보고 없으면 한번에 한 사람씩 말한다.
+- 우리가 “(아무도 말이 없을 때) 내가 먼저 말할게~” 또는 ‘아 저기가 말하고 있으니까 이따 해야겠다..’라고 생각하는 것처럼.
+- 근데 CSMA에서도 충돌은 나긴 한다. 지연시간 때문에 두 노드가 서로의 전송을 듣지 못하고 서로 보내다 충돌하는 경우. 근데 지연시간이 0일 수 없기 때문에 충돌은 어떤 MAC protocols에서도 무조건 난다.
+- CSMA/CD(Collision Detect): 충돌 감지하면(다른 사람이 전송하고 있음) 중단 후 jam signal을 통해 전달 잠시 물러났다가(backoff), 다시 전달한다
+- backoff는 m번째 충돌의 경우 `0 ~ 2^m-1`번까지 중에서 선택
+- `K*512`bit times만큼 backoff 하면 다시 처음으로 간다
+- 더 많은 충돌이 일어날수록 backoff가 길어지고 그만큼 딜레이가 생긴다. 따라서 backoff시간이 네트워크 지연의 주요 이유
+- “taking turns” Protocol: 말그대로 턴을 주고 받음
+- polling: 진행자(master) 노드가 다른 노드들(slaves로 표현)의 전송을 처리함
+- token passing: 토큰을 넘기면서(차례의 역할) 토큰을 가지고 있는 노드가 전송하는 방식
+- 얘는 충돌이 안 일어난다고 봐야.
+
+<br>
+
+### LAN(Local Area Network)
+
+<aside>
+💡 한 broadcast medium을 의미. 라우터를 거치지 않고 만날 수 있는 네트워크의 집합.
+
+</aside>
+
+<br>
+
+### Ethernet
+
+- MAC 프로토콜의 하나
+- bus와 star 모양이 대표적, 요새는 star 모양을 많이 쓴다. 중간에 active swtich가 있는 형태.
+
+- CSMA/CD 사용
+- 충돌을 인식하지 않으면 무조건 전달됐을거라고 확신함, 충돌 인식시 재전송
+- cf) TCP에서 재전송, ACK를 받지 못할때 재전송(timer가 터져야 됨, 오래 걸림, 링크에서 재전송하는게 나음)
+- 근데 충돌 인식에 실패하면????
+
+<br>
+
+
+### 이더넷의 구조
+
+- message → segment → ip packet(==datagram) → frame의 data(payload) 부분에 들어감
+- header: preamble, dest, src(ip address랑은 다름), type(ip 프로토콜 종류)
+- CRC: 에러 체킹 하는 부분
+
+<br>
+
+### IP address와 MAC address (== LAN / physical / Ethernet address)의 차이
+
+- IP address는 physical한 주소
+- ex) 서울시 관악구 조원동 …
+- MAC address는 식별값, LAN 내에서 frame이 한 interface에서 다른 물리적으로 연결된 interface와 구분되도록 사용되는 요소
+- ex) 주민등록번호
+- frame의 dest, src에는 바로 MAC 주소값이 들어간다
+
+cf) Interface?? node인가? `chatGPT`
+
+> 인터페이스는 네트워크 장비(노드)의 물리적 또는 논리적인 연결점을 의미합니다. 이는 컴퓨터, 스위치, 라우터 등의 네트워크 장비에서 네트워크와의 연결을 위한 포트, 소켓, 인터페이스 카드 등과 같은 개념으로 이해할 수 있습니다.
+>
+>
+> 인터페이스는 노드가 네트워크에 접속하고 통신하기 위한 출입구로 작동합니다. 각 인터페이스는 고유한 MAC 주소를 가지며, 이를 통해 다른 장비들과 구별됩니다. MAC 주소는 네트워크 상에서 데이터를 전송할 때 출발지와 목적지 장비를 식별하는 데 사용됩니다.
+>
+> 따라서, 인터페이스는 네트워크 장비(노드) 내부의 연결점으로, 각각 고유한 MAC 주소를 가지고 있습니다. 이를 통해 프레임이 출발지 인터페이스에서 목적지 인터페이스로 전달되며, 다른 인터페이스들과 구분되도록 도와줍니다.
+>
+
+<br>
+
+### Link Layer의 오류 검출 기법
+
+- 순환중복검사(CRC)와 패리티 비트(Parity Bit)
+- CRC는 수신측에서 1) 송신측에서 생성한 데이터에 대한 임의의 비트열과 2) 수신측에서 받은 데이터를 비교해 일치여부를 확인하여 오류 발생을 확인
+- 패리티 비트는 수신측에서 1) 송신측에서 데이터의 비트에 대한 홀수/짝수 패리티를 계산해 넣어놓은 패리티 값과 2) 수신측에서 받은 데이터의 패리티값을 계산하고 둘을 비교해 오류를 검출한다.
